@@ -1,5 +1,5 @@
 -module(support).
--export([slurp/1, input/1, count/2]).
+-export([slurp/1, input/1, count/2, in_range/2]).
 
 -spec slurp(iodata()) -> list(string()).
 slurp(Filename) ->
@@ -29,3 +29,8 @@ count(Predicate, List) ->
             false -> Sum
         end
     end, 0, List).
+
+-spec in_range(integer(), {integer(), integer()}) -> boolean().
+in_range(X, {Min, _}) when X < Min -> false;
+in_range(X, {_, Max}) when X > Max -> false;
+in_range(_, _) -> true.
