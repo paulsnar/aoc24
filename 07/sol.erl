@@ -11,6 +11,11 @@ eval(Acc, [Arg | RestArgs], [Op | RestOps]) ->
     Res = op(Acc, Arg, Op),
     eval(Res, RestArgs, RestOps).
 
+op(A, B, concat) ->
+    list_to_integer(
+        integer_to_list(A)
+        ++ integer_to_list(B)
+    );
 op(A, B, add) -> A + B;
 op(A, B, mul) -> A * B.
 
@@ -31,8 +36,27 @@ permute(N, Acc) ->
     Next = fun () -> permute(N, Acc - 1) end,
     {bits_to_ops(N, Acc), Next}.
 
-search(Result, Args) ->
-    {Ops0, Next0} = permute(length(Args) - 1),
+permute_3(N) ->
+    permute_3(N, floor(math:pow(3, N)) - 1).
+permute_3(_, -1) ->
+    undefined;
+permute_3(N, Acc) ->
+    Next = fun() -> permute_3(N, Acc - 1) end,
+    {threes_to_ops(N, Acc), Next}.
+
+threes_to_ops(N, Threes) ->
+    Ops = [
+        case Pos of
+            $0 -> add;
+            $1 -> mul;
+            $2 -> concat
+        end
+        || Pos <- integer_to_list(Threes, 3)
+    ],
+    lists:duplicate(N - length(Ops), add) ++ Ops.
+
+search(Result, Args, Generator) ->
+    {Ops0, Next0} = Generator(length(Args) - 1),
     search(Result, Args, Ops0, Next0).
 search(Result, Args, Ops, NextOps) ->
     EvalResult = eval(Args, Ops),
@@ -54,7 +78,15 @@ parse([Line | Rest], Eqs) ->
 
 sol1(Eqs) ->
     lists:foldl(fun ({Result, Args}, Sum) ->
-        case search(Result, Args) of
+        case search(Result, Args, fun permute/1) of
+            {ok, _} -> Sum + Result;
+            undefined -> Sum
+        end
+    end, 0, Eqs).
+
+sol2(Eqs) ->
+    lists:foldl(fun ({Result, Args}, Sum) ->
+        case search(Result, Args, fun permute_3/1) of
             {ok, _} -> Sum + Result;
             undefined -> Sum
         end
